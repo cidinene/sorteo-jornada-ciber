@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Proyector · Sorteo del décimo</title>
+<script src="qrcode.js"></script>
+<script src="config.js"></script>
+<style>
+  :root { --bg:#0d0f14; --panel:#161a22; --line:#262c38; --ink:#f3f4f6; --mute:#8b93a3; --red:#ff4d6d; --gold:#f2c14e; --ok:#3ddc97; --blue:#5aa9ff; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; height:100%; background:var(--bg); color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+  body { display:flex; flex-direction:column; }
+  .top { display:flex; align-items:center; justify-content:space-between; padding:16px 28px; border-bottom:1px solid var(--line); }
+  .top h1 { margin:0; font-size:22px; font-weight:700; letter-spacing:.01em; }
+  .top h1 span { color:var(--mute); font-weight:400; }
+  .controls { display:flex; gap:8px; flex-wrap:wrap; }
+  .controls button, .controls a { background:var(--panel); color:var(--ink); border:1px solid var(--line); border-radius:10px; padding:9px 14px; font-size:14px; cursor:pointer; text-decoration:none; }
+  .controls button.primary { background:var(--red); border-color:var(--red); font-weight:700; }
+  .controls button.gold { background:var(--gold); border-color:var(--gold); color:#2a1d00; font-weight:700; }
+  .controls button.danger { color:var(--red); }
+  body.clean .controls { visibility:hidden; }
+  .view { flex:1; display:none; padding:28px; gap:28px; min-height:0; }
+  .view.on { display:flex; }
+
+  /* Registro */
+  .qrbox { background:#fff; border-radius:24px; padding:26px; display:flex; flex-direction:column; align-items:center; justify-content:center; flex:0 0 auto; }
+  #qr { width:min(56vh,44vw); height:min(56vh,44vw); }
+  #qr svg, #qr img { width:100%; height:100%; display:block; }
+  .url { color:#111; font-size:22px; font-weight:700; margin-top:14px; font-family:ui-monospace,Menlo,monospace; text-align:center; word-break:break-all; max-width:min(56vh,44vw); }
+  .side { flex:1; display:flex; flex-direction:column; min-width:0; }
+  .claim { font-size:clamp(28px,3.6vw,56px); font-weight:800; line-height:1.05; margin:0 0 10px; }
+  .claim em { font-style:normal; color:var(--gold); }
+  .count { font-size:clamp(70px,11vw,170px); font-weight:800; line-height:1; color:var(--ok); font-variant-numeric:tabular-nums; }
+  .countlbl { color:var(--mute); font-size:20px; margin-bottom:18px; }
+  .names { flex:1; overflow:hidden; display:flex; flex-wrap:wrap; align-content:flex-start; gap:10px; mask-image:linear-gradient(#000 75%,transparent); }
+  .chip { background:var(--panel); border:1px solid var(--line); border-radius:99px; padding:8px 16px; font-size:19px; animation:pop .4s ease; }
+  @keyframes pop { from { transform:scale(.6); opacity:0; } }
+
+  /* Revelación */
+  #reveal { flex-direction:column; overflow:auto; }
+  .kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:18px; }
+  .kpi { background:var(--panel); border:1px solid var(--line); border-radius:18px; padding:18px 20px; }
+  .kpi b { display:block; font-size:clamp(34px,4vw,60px); line-height:1.05; font-variant-numeric:tabular-nums; }
+  .kpi span { color:var(--mute); font-size:16px; }
+  .red b { color:var(--red); } .ok b { color:var(--ok); } .gold b { color:var(--gold); } .blue b { color:var(--blue); }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr 1.4fr; gap:18px; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:18px; padding:18px 20px; min-width:0; }
+  .panel h3 { margin:0 0 12px; font-size:16px; color:var(--mute); text-transform:uppercase; letter-spacing:.08em; font-weight:600; }
+  .bar { display:grid; grid-template-columns:minmax(0,1fr) 3fr 40px; align-items:center; gap:10px; margin:8px 0; font-size:16px; }
+  .bar .lbl { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .bar .trk { height:14px; background:#222836; border-radius:99px; overflow:hidden; }
+  .bar .fill { height:100%; background:var(--blue); border-radius:99px; transition:width .6s; }
+  .bar .v { text-align:right; color:var(--mute); font-variant-numeric:tabular-nums; }
+  .feed { display:flex; flex-direction:column; gap:8px; max-height:44vh; overflow:auto; }
+  .row { display:flex; gap:12px; align-items:baseline; font-size:16px; border-bottom:1px solid var(--line); padding:6px 0; }
+  .row .n { font-weight:700; min-width:120px; }
+  .row .d { color:#c9cfdb; font-family:ui-monospace,Menlo,monospace; font-size:14px; }
+  .row.safe .d { color:var(--ok); }
+  .readers { color:var(--gold); font-size:18px; }
+
+  /* Sorteo */
+  #draw { flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+  .slot { font-size:clamp(48px,7vw,110px); font-weight:800; min-height:1.3em; color:var(--gold); }
+  .winners { display:grid; grid-template-columns:repeat(5,1fr); gap:16px; margin-top:30px; width:100%; max-width:1400px; }
+  .w { background:var(--panel); border:1px solid var(--gold); border-radius:16px; padding:18px 10px; font-size:24px; font-weight:700; animation:pop .5s ease; }
+  .w small { display:block; color:var(--gold); font-size:14px; margin-bottom:4px; }
+  .decimo { margin-top:34px; background:linear-gradient(160deg,#f2c14e,#ffe08a); color:#2a1d00; border-radius:24px; padding:26px 60px; animation:pop .6s ease; box-shadow:0 0 80px rgba(242,193,78,.45); }
+  .decimo small { display:block; font-size:20px; font-weight:700; letter-spacing:.15em; text-transform:uppercase; }
+  .decimo b { font-size:clamp(48px,6vw,96px); }
+  .hint { color:var(--mute); font-size:14px; padding:8px 28px; border-top:1px solid var(--line); }
+  #login { position:fixed; inset:0; background:var(--bg); display:flex; align-items:center; justify-content:center; flex-direction:column; gap:12px; }
+  #login input { font-size:20px; padding:12px; border-radius:10px; border:1px solid var(--line); background:var(--panel); color:var(--ink); }
+</style>
+</head>
+<body>
+<div class="top">
+  <h1>Jornada de Ciberseguridad <span>· Sorteo del décimo de Navidad</span></h1>
+  <div class="controls">
+    <button data-v="reg">1 · Registro</button>
+    <button class="primary" id="btnReveal">2 · Revelar 👀</button>
+    <button class="gold" id="btnDraw">3 · Sortear 🎄</button>
+    <button class="danger" id="btnWipe" title="Borra IP, UA y huella; conserva nombre y correo">Borrar datos técnicos</button>
+    <button class="danger" id="btnReset">Reiniciar</button>
+  </div>
+</div>
+
+<div class="view on" id="reg">
+  <div class="qrbox"><div id="qr"></div><div class="url" id="url"></div></div>
+  <div class="side">
+    <p class="claim">Escanea y participa en el sorteo de las <em>10 participaciones</em> de un décimo de Navidad 🎄</p>
+    <div class="count" id="count">0</div>
+    <div class="countlbl">participantes</div>
+    <div class="names" id="names"></div>
+  </div>
+</div>
+
+<div class="view" id="reveal">
+  <p class="claim" style="margin:0">Gracias por participar. Esto es lo que nos habéis dado <em>sin daros cuenta</em>.</p>
+  <div class="kpis">
+    <div class="kpi red"><b id="kAll">–</b><span>aceptaron «todo»</span></div>
+    <div class="kpi gold"><b id="kTime">–</b><span>tiempo medio en aceptar</span></div>
+    <div class="kpi blue"><b id="kTerms">–</b><span>abrieron las condiciones</span></div>
+    <div class="kpi ok"><b id="kReject">–</b><span>rechazaron (y participan igual)</span></div>
+  </div>
+  <div class="grid2">
+    <div class="panel"><h3>Sistema</h3><div id="bOs"></div><h3 style="margin-top:18px">Navegador</h3><div id="bBr"></div></div>
+    <div class="panel"><h3>Batería</h3><div id="bBat"></div><h3 style="margin-top:18px">Modelos detectados</h3><div id="bModel"></div></div>
+    <div class="panel"><h3>En directo</h3><div class="feed" id="feed"></div><div class="readers" id="readers"></div></div>
+  </div>
+</div>
+
+<div class="view" id="draw">
+  <div style="color:var(--mute);font-size:22px" id="drawTitle">Sorteo de 10 participaciones</div>
+  <div class="slot" id="slot">¿Preparados?</div>
+  <div class="winners" id="winners"></div>
+  <div id="decimoBox"></div>
+</div>
+
+<div class="hint">Atajos: <b>1</b> registro · <b>2</b> revelar · <b>3</b> sorteo · <b>H</b> ocultar botones · <b>F</b> pantalla completa</div>
+
+<div id="login" style="display:none"><div>Clave de administración</div><input id="k" type="password" autofocus><div style="color:#8b93a3;font-size:14px">La que pusiste en ADMIN_KEY dentro del Apps Script</div></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const params = new URLSearchParams(location.search);
+let KEY = params.get('key') || sessionStorage.getItem('k') || '';
+let data = { participants: [], winners: [] }, qrDone = '', seen = new Set();
+const API = window.API_URL;
+const apiGet = async q => (await fetch(API + '?' + new URLSearchParams(q))).json();
+const apiPost = async b => (await fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(b) })).json();
+const admin = (action, extra) => apiGet(Object.assign({ action, key: KEY }, extra || {}));
+const JOIN_URL = new URL('./', location.href).href;
+
+function show(v) { document.querySelectorAll('.view').forEach(x => x.classList.toggle('on', x.id === v)); }
+document.querySelectorAll('[data-v]').forEach(b => b.onclick = () => show(b.dataset.v));
+
+function drawQR(u) {
+  if (u === qrDone) return; qrDone = u;
+  const q = qrcode(0, 'M'); q.addData(u); q.make();
+  $('#qr').innerHTML = q.createSvgTag({ cellSize: 8, margin: 0, scalable: true });
+  $('#url').textContent = u.replace(/^https?:\/\//, '').replace(/\/$/, '');
+}
+
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function bars(el, counts, total, color) {
+  const arr = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  $(el).innerHTML = arr.length ? arr.map(([k, v]) => `<div class="bar"><div class="lbl">${esc(k)}</div><div class="trk"><div class="fill" style="width:${Math.round(v / total * 100)}%;${color ? 'background:' + color : ''}"></div></div><div class="v">${v}</div></div>`).join('') : '<div style="color:#8b93a3">–</div>';
+}
+const pct = (a, b) => b ? Math.round(a / b * 100) + '%' : '–';
+
+function render() {
+  const P = data.participants, n = P.length;
+  drawQR(JOIN_URL);
+  $('#count').textContent = n;
+  // nombres nuevos
+  const box = $('#names');
+  P.slice().reverse().forEach(p => { if (!seen.has(p.id)) { seen.add(p.id); const c = document.createElement('div'); c.className = 'chip'; c.textContent = p.name; box.prepend(c); } });
+
+  // Revelación
+  const all = P.filter(p => p.consent === 'all');
+  $('#kAll').textContent = pct(all.length, n);
+  const avg = n ? P.reduce((s, p) => s + p.secondsToAccept, 0) / n : 0;
+  $('#kTime').textContent = n ? avg.toFixed(1) + ' s' : '–';
+  $('#kTerms').textContent = pct(P.filter(p => p.openedTerms).length, n);
+  $('#kReject').textContent = n - all.length;
+  const os = {}, br = {}, model = {}, bat = { 'Menos del 20%': 0, '20–50%': 0, '50–80%': 0, 'Más del 80%': 0, 'Cargando': 0 };
+  let batN = 0;
+  all.forEach(p => {
+    const s = p.summary || {};
+    const o = (s.os || '?').replace(/ .*/, ''); os[o] = (os[o] || 0) + 1;
+    const b = (s.browser || '?').replace(/ \d.*/, ''); br[b] = (br[b] || 0) + 1;
+    if (s.model) model[s.model] = (model[s.model] || 0) + 1;
+    const bt = p.device && p.device.battery;
+    if (bt) { batN++; if (bt.charging) bat['Cargando']++; else if (bt.level < 20) bat['Menos del 20%']++; else if (bt.level < 50) bat['20–50%']++; else if (bt.level < 80) bat['50–80%']++; else bat['Más del 80%']++; }
+  });
+  Object.keys(bat).forEach(k => { if (!bat[k]) delete bat[k]; });
+  bars('#bOs', os, all.length); bars('#bBr', br, all.length, '#a78bfa');
+  bars('#bBat', bat, batN || 1, '#3ddc97'); bars('#bModel', model, all.length, '#f2c14e');
+  if (!batN) $('#bBat').innerHTML = '<div style="color:#8b93a3">Solo Chrome/Android expone la batería</div>';
+  $('#feed').innerHTML = P.slice().reverse().map(p => {
+    if (p.consent !== 'all') return `<div class="row safe"><span class="n">${esc(p.name)}</span><span class="d">🛡️ rechazó: solo sabemos su nombre</span></div>`;
+    const s = p.summary || {}, d = p.device || {};
+    const parts = [s.model, s.os, s.browser, d.battery ? '🔋' + d.battery.level + '%' : '', d.screen, d.gpu, p.ipMasked ? 'IP ' + p.ipMasked : '', d.connection && d.connection.effectiveType ? d.connection.effectiveType : ''].filter(Boolean);
+    return `<div class="row"><span class="n">${esc(p.name)}</span><span class="d">${esc(parts.join(' · '))}</span></div>`;
+  }).join('');
+  const rd = P.filter(p => p.reader).map(p => p.name);
+  $('#readers').innerHTML = rd.length ? '🏅 Leyeron las condiciones hasta el final: <b>' + rd.map(esc).join(', ') + '</b>' : '🏅 Nadie leyó las condiciones hasta el final.';
+}
+
+async function load() {
+  drawQR(JOIN_URL);
+  if (!API || API.startsWith('PEGA')) { $('#url').textContent = 'Falta la URL de Apps Script en config.js'; return; }
+  let r; try { r = await admin('admin_data'); } catch (_) { return; }
+  if (r.status === 403) { $('#login').style.display = 'flex'; return; }
+  if (r.error) return;
+  $('#login').style.display = 'none';
+  data = r; render();
+}
+$('#k').onkeydown = e => { if (e.key === 'Enter') { KEY = e.target.value.trim(); sessionStorage.setItem('k', KEY); load(); } };
+if (KEY) sessionStorage.setItem('k', KEY);
+load(); setInterval(load, 4000);
+
+$('#btnReveal').onclick = async () => { await admin('admin_reveal'); await load(); show('reveal'); };
+$('#btnWipe').onclick = async () => { if (confirm('¿Borrar IP, User-Agent y huella de todos? Se conservan nombre, correo y ganadores.')) { await admin('admin_wipe'); load(); } };
+$('#btnReset').onclick = async () => { if (confirm('¿Borrar TODOS los participantes y el sorteo? No se puede deshacer.')) { await admin('admin_reset'); seen.clear(); $('#names').innerHTML = ''; $('#winners').innerHTML = ''; $('#decimoBox').innerHTML = ''; load(); } };
+
+let drawing = false;
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+async function spin(names, n) { for (let s = 0; s < n; s++) { $('#slot').textContent = names[Math.floor(Math.random() * names.length)]; await sleep(40 + s * 6); } }
+const nameMap = () => Object.fromEntries(data.participants.map(p => [p.id, p.name]));
+
+$('#btnDraw').onclick = async () => {
+  if (drawing) return;
+  if (!data.participants.length) { alert('Aún no hay participantes'); return; }
+  if (data.winners && data.winners.length && !confirm('El sorteo ya está hecho. ¿Repetirlo?')) return;
+  drawing = true; show('draw'); $('#drawTitle').textContent = 'Sorteo de las 10 participaciones del décimo de Navidad'; $('#winners').innerHTML = ''; $('#decimoBox').innerHTML = '';
+  const { winners } = await admin('admin_draw');
+  const byId = nameMap(), names = Object.values(byId);
+  for (let i = 0; i < winners.length; i++) {
+    await spin(names, i === 0 ? 30 : 16);
+    $('#slot').textContent = byId[winners[i]];
+    const w = document.createElement('div'); w.className = 'w'; w.innerHTML = `<small>Participación ${i + 1}</small>${esc(byId[winners[i]])}`; $('#winners').appendChild(w);
+    await sleep(900);
+  }
+  $('#slot').textContent = '¡Enhorabuena! 🎉'; drawing = false; load();
+};
+
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.key === '1') show('reg'); if (e.key === '2') $('#btnReveal').click(); if (e.key === '3') $('#btnDraw').click();
+  if (e.key.toLowerCase() === 'h') document.body.classList.toggle('clean');
+  if (e.key.toLowerCase() === 'f') (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen());
+});
+</script>
+</body>
+</html>

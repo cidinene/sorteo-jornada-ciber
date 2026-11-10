@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sorteo del Décimo de Navidad · Jornada de Ciberseguridad</title>
+<style>
+  :root { --red:#b3122e; --red2:#8c0b22; --gold:#d9a521; --ink:#1d1d1f; --mute:#6b6b70; --bg:#fbf7f0; --card:#fff; --ok:#1f7a4d; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; background:var(--bg); color:var(--ink); line-height:1.45; }
+  header { background:linear-gradient(160deg,var(--red),var(--red2)); color:#fff; padding:28px 22px 60px; text-align:center; position:relative; overflow:hidden; }
+  header::after { content:""; position:absolute; inset:auto -20% -40px -20%; height:80px; background:var(--bg); border-radius:50% 50% 0 0; }
+  .badge { display:inline-block; font-size:12px; letter-spacing:.12em; text-transform:uppercase; border:1px solid rgba(255,255,255,.5); border-radius:99px; padding:4px 12px; }
+  h1 { font-size:28px; margin:14px 0 6px; line-height:1.15; }
+  header p { margin:0; opacity:.9; font-size:15px; }
+  .ticket { margin:-34px 18px 0; position:relative; z-index:2; background:var(--card); border-radius:18px; box-shadow:0 10px 30px rgba(0,0,0,.08); padding:22px 20px; }
+  .num { font-family:Georgia,serif; font-size:40px; letter-spacing:.08em; color:var(--red); text-align:center; font-weight:bold; }
+  .sub { text-align:center; color:var(--mute); font-size:13px; margin-bottom:14px; }
+  label { display:block; font-size:14px; font-weight:600; margin:14px 0 6px; }
+  input[type=text], input[type=email] { width:100%; font-size:17px; padding:13px 14px; border:1.5px solid #ddd; border-radius:12px; background:#fff; }
+  input:focus { outline:none; border-color:var(--red); }
+  .btn { display:block; width:100%; border:0; border-radius:14px; padding:16px; font-size:17px; font-weight:700; cursor:pointer; margin-top:18px; }
+  .btn-main { background:var(--red); color:#fff; box-shadow:0 6px 16px rgba(179,18,46,.35); }
+  .btn-main:disabled { opacity:.6; }
+  .small { font-size:12px; color:var(--mute); margin-top:12px; text-align:center; }
+  .small a, .link { color:var(--mute); }
+  .err { color:var(--red); font-size:14px; margin-top:8px; min-height:1em; }
+  main { padding-bottom:40px; }
+  section { margin:18px; }
+
+  /* Banner de cookies */
+  #overlay { position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:50; display:flex; align-items:flex-end; }
+  .sheet { background:#fff; width:100%; border-radius:20px 20px 0 0; padding:22px 20px calc(18px + env(safe-area-inset-bottom)); max-height:88vh; overflow:auto; animation:up .35s ease; }
+  @keyframes up { from { transform:translateY(100%); } }
+  .sheet h2 { margin:0 0 8px; font-size:20px; }
+  .sheet p { font-size:14px; color:#444; margin:0 0 6px; }
+  .partners { font-size:12px; color:var(--mute); }
+  .tiny { font-size:11px; color:#aaa; text-align:center; margin-top:14px; }
+  .tiny a { color:#b5b5b5; }
+  .toggle { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid #eee; font-size:14px; }
+  .toggle small { display:block; color:var(--mute); font-size:12px; }
+  .sw { position:relative; width:46px; height:28px; flex:none; }
+  .sw input { opacity:0; width:0; height:0; }
+  .sw span { position:absolute; inset:0; background:#ccc; border-radius:99px; transition:.2s; }
+  .sw span::before { content:""; position:absolute; width:22px; height:22px; left:3px; top:3px; background:#fff; border-radius:50%; transition:.2s; }
+  .sw input:checked + span { background:var(--ok); }
+  .sw input:checked + span::before { transform:translateX(18px); }
+  .sw input:disabled + span { opacity:.6; }
+
+  /* Condiciones */
+  #terms { position:fixed; inset:0; background:#fff; z-index:60; overflow:auto; padding:20px 20px 60px; display:none; font-size:13px; color:#333; }
+  #terms h2 { font-size:18px; }
+  #terms h3 { font-size:14px; margin:18px 0 4px; }
+  #terms .close { position:sticky; top:0; float:right; background:var(--ink); color:#fff; border:0; border-radius:99px; padding:8px 14px; font-weight:600; }
+  .hidden { display:none !important; }
+
+  /* Tras registrarse */
+  .done { text-align:center; }
+  .done .check { font-size:54px; }
+  .pulse { display:inline-block; width:10px; height:10px; border-radius:50%; background:var(--ok); margin-right:6px; animation:pl 1.4s infinite; }
+  @keyframes pl { 50% { opacity:.25; } }
+  .reveal { background:#111; color:#f2f2f2; border-radius:18px; padding:22px 18px; }
+  .reveal h2 { margin:0 0 6px; color:#ff5c7a; font-size:22px; }
+  .reveal dl { margin:14px 0 0; display:grid; grid-template-columns:minmax(0,2fr) minmax(0,3fr); gap:8px 12px; font-size:14px; }
+  .reveal dt { color:#9a9a9a; }
+  .reveal dd { margin:0; font-family:ui-monospace,Menlo,Consolas,monospace; word-break:break-word; }
+  .tips { background:#fff; border-radius:18px; padding:18px 18px 8px; }
+  .tips h3 { margin:0 0 8px; }
+  .tips li { margin-bottom:10px; font-size:14px; }
+  .win { background:linear-gradient(160deg,var(--gold),#f1cf6b); color:#3d2a00; border-radius:18px; padding:22px; text-align:center; font-size:20px; font-weight:800; }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="badge">Jornada de Ciberseguridad · 12 nov</span>
+  <h1>Sorteo de un décimo<br>de Lotería de Navidad</h1>
+  <p>Participa gratis en 10 segundos 🎄</p>
+</header>
+
+<main>
+  <!-- Paso 1: formulario -->
+  <div id="formCard" class="ticket">
+    <div class="num">· · · · ·</div>
+    <div class="sub">Un décimo dividido en 10 participaciones: 10 ganadores</div>
+    <form id="f" autocomplete="on">
+      <label for="name">Nombre y apellido</label>
+      <input id="name" name="name" type="text" required autocomplete="name" placeholder="Tu nombre">
+      <label for="email">Correo electrónico</label>
+      <input id="email" name="email" type="email" autocomplete="email" placeholder="para avisarte si ganas">
+      <div class="err" id="err"></div>
+      <button class="btn btn-main" id="go" type="submit">¡Quiero participar!</button>
+    </form>
+    <div class="small">Al participar aceptas las <a href="#" class="openTerms">condiciones del sorteo</a>.</div>
+  </div>
+
+  <!-- Paso 2: participando -->
+  <div id="doneCard" class="ticket done hidden">
+    <div class="check">🎟️</div>
+    <h2 style="margin:6px 0">¡Ya estás dentro, <span id="hi"></span>!</h2>
+    <p class="sub" style="margin-bottom:6px">Tu número de participación</p>
+    <div class="num" id="myNum">-----</div>
+    <p class="small"><span class="pulse"></span>No cierres esta página: aquí verás si ganas.</p>
+  </div>
+
+  <section id="winBox" class="hidden"></section>
+  <section id="revealBox" class="hidden"></section>
+  <section id="tipsBox" class="hidden"></section>
+</main>
+
+<!-- Banner de cookies (patrones oscuros a propósito) -->
+<div id="overlay">
+  <div class="sheet" id="sheetMain">
+    <h2>🍪 Valoramos tu privacidad</h2>
+    <p>Utilizamos cookies y tecnologías similares para mejorar tu experiencia, personalizar el sorteo y garantizar que nadie participe dos veces. Necesitamos tu consentimiento para que puedas participar.</p>
+    <p class="partners">Compartimos información con nuestros <b>1.437 socios</b> de confianza.</p>
+    <button class="btn btn-main" id="acceptAll">Aceptar todo y participar</button>
+    <div class="tiny"><a href="#" id="toConfig">Configurar preferencias</a> · <a href="#" class="openTerms">Condiciones</a></div>
+  </div>
+  <div class="sheet hidden" id="sheetConfig">
+    <h2>Preferencias de privacidad</h2>
+    <p>Hemos preseleccionado las opciones que te ofrecen la mejor experiencia.</p>
+    <div class="toggle"><div>Estrictamente necesarias<small>Siempre activas</small></div><label class="sw"><input type="checkbox" checked disabled><span></span></label></div>
+    <div class="toggle"><div>Huella del dispositivo<small>Modelo, sistema, pantalla, batería, red, idioma…</small></div><label class="sw"><input type="checkbox" class="opt" checked><span></span></label></div>
+    <div class="toggle"><div>Personalización y medición<small>Tiempo de lectura, interacción</small></div><label class="sw"><input type="checkbox" class="opt" checked><span></span></label></div>
+    <div class="toggle"><div>Interés legítimo de socios<small>1.437 socios · <a href="#" class="openTerms">ver lista</a></small></div><label class="sw"><input type="checkbox" class="opt" checked><span></span></label></div>
+    <button class="btn btn-main" id="saveConfig">Guardar y participar</button>
+    <div class="tiny"><a href="#" id="rejectAll">Rechazar todo</a></div>
+  </div>
+</div>
+
+<!-- Condiciones (largas a propósito) -->
+<div id="terms">
+  <button class="close" id="closeTerms">Cerrar ✕</button>
+  <h2>Bases legales del sorteo y política de tratamiento de datos</h2>
+  <h3>1. Objeto</h3>
+  <p>El presente sorteo tiene por objeto repartir mediante sorteo las diez (10) participaciones de un décimo de la Lotería de Navidad adquirido por la organización entre las personas asistentes a la Jornada de Ciberseguridad para la Administración Pública celebrada el 12 de noviembre de 2026.</p>
+  <h3>2. Requisitos</h3>
+  <p>Podrán participar las personas mayores de edad asistentes a la jornada. Solo se admitirá una participación por persona y dispositivo. La organización se reserva el derecho a excluir participaciones fraudulentas, duplicadas o realizadas con un entusiasmo excesivo.</p>
+  <h3>3. Mecánica</h3>
+  <p>El sorteo se realizará de forma aleatoria durante la propia jornada entre todas las inscripciones válidas. Saldrán diez personas ganadoras y cada una recibirá una participación. Nadie podrá recibir más de una. Las personas ganadoras se anunciarán en pantalla y en este mismo dispositivo.</p>
+  <h3>4. Datos que se recogen</h3>
+  <p>Al pulsar «Aceptar todo», la persona participante consiente que se recojan, además de su nombre y correo electrónico, los siguientes datos de su dispositivo accesibles por el navegador: dirección IP, agente de usuario, sistema operativo y versión, modelo del terminal cuando el navegador lo facilite, navegador y versión, resolución y densidad de pantalla, idiomas, zona horaria, hora local, número de núcleos del procesador, memoria aproximada, modelo de procesador gráfico, tipo y calidad de conexión, nivel de batería y estado de carga, preferencia de modo oscuro, así como el tiempo que tarda en aceptar estas condiciones y si las ha abierto.</p>
+  <h3>5. Finalidad</h3>
+  <p>Los datos se utilizarán exclusivamente para gestionar el sorteo y para una demostración de concienciación en ciberseguridad durante la propia jornada, en la que se mostrarán de forma agregada y seudonimizada (nombre e inicial del apellido).</p>
+  <h3>6. Cesiones</h3>
+  <p>Los 1.437 «socios» mencionados en el aviso de cookies no existen: forman parte de la demostración. Los datos no se cederán a terceros.</p>
+  <h3>7. Conservación</h3>
+  <p>Los datos técnicos del dispositivo se eliminarán al finalizar la jornada. El nombre y el correo de las personas ganadoras se conservarán únicamente hasta la entrega de las participaciones y, en todo caso, no más allá del 31 de diciembre de 2026.</p>
+  <h3>8. Derechos</h3>
+  <p>Puedes ejercer tus derechos de acceso, rectificación, supresión, oposición, limitación y portabilidad dirigiéndote a la organización de la jornada en el propio salón de actos. También puedes rechazar todas las cookies opcionales: seguirás participando en el sorteo exactamente igual.</p>
+  <h3>9. Cesión de derechos de imagen sobre tu próximo selfie</h3>
+  <p>Era broma. Pero ¿cuántas cláusulas así habrás aceptado sin leer?</p>
+  <h3>10. Premio para quien lee</h3>
+  <p>Si has llegado hasta aquí, marca esta casilla. No cambia tus posibilidades en el sorteo, pero te mencionaremos en pantalla como ejemplo a seguir.</p>
+  <p><label style="display:flex;gap:10px;align-items:center;font-weight:600"><input type="checkbox" id="reader" style="width:22px;height:22px"> He leído las condiciones de verdad</label></p>
+</div>
+
+<script src="config.js"></script>
+<script>
+const API = window.API_URL;
+const apiGet = async q => (await fetch(API + '?' + new URLSearchParams(q))).json();
+const apiPost = async b => (await fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(b) })).json();
+const T0 = Date.now();
+let consent = null, secondsToAccept = 0, openedTerms = false, myId = localStorage.getItem('pid');
+const $ = s => document.querySelector(s);
+
+// --- Banner ---
+function closeBanner(c) {
+  consent = c; secondsToAccept = (Date.now() - T0) / 1000;
+  $('#overlay').classList.add('hidden');
+  $('#name').focus();
+}
+$('#acceptAll').onclick = () => closeBanner('all');
+$('#toConfig').onclick = e => { e.preventDefault(); $('#sheetMain').classList.add('hidden'); $('#sheetConfig').classList.remove('hidden'); };
+$('#saveConfig').onclick = () => {
+  const allOn = [...document.querySelectorAll('.opt')].every(x => x.checked);
+  const fp = document.querySelectorAll('.opt')[0].checked;
+  closeBanner(fp ? 'all' : 'necessary');
+};
+$('#rejectAll').onclick = e => { e.preventDefault(); closeBanner('necessary'); };
+document.querySelectorAll('.openTerms').forEach(a => a.onclick = e => { e.preventDefault(); openedTerms = true; $('#terms').style.display = 'block'; $('#terms').scrollTop = 0; });
+$('#closeTerms').onclick = () => $('#terms').style.display = 'none';
+
+// --- Recogida de información del dispositivo (solo APIs estándar del navegador, sin permisos) ---
+async function collect() {
+  const n = navigator, s = screen, d = {};
+  d.platform = n.platform;
+  d.languages = (n.languages || [n.language]).join(', ');
+  d.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  d.localTime = new Date().toLocaleString('es-ES');
+  d.screen = `${s.width}×${s.height} @${window.devicePixelRatio}x`;
+  d.viewport = `${innerWidth}×${innerHeight}`;
+  d.cores = n.hardwareConcurrency;
+  if (n.deviceMemory) d.memoryGB = n.deviceMemory;
+  d.touchPoints = n.maxTouchPoints;
+  d.darkMode = matchMedia('(prefers-color-scheme: dark)').matches;
+  d.doNotTrack = n.doNotTrack || 'no';
+  d.secondsOnPage = Math.round((Date.now() - T0) / 1000);
+  try { const c = n.connection; if (c) d.connection = { type: c.type, effectiveType: c.effectiveType, downlinkMbps: c.downlink, rttMs: c.rtt, saveData: c.saveData }; } catch (_) {}
+  try { if (n.getBattery) { const b = await n.getBattery(); d.battery = { level: Math.round(b.level * 100), charging: b.charging }; } } catch (_) {}
+  try {
+    const gl = document.createElement('canvas').getContext('webgl');
+    const ext = gl.getExtension('WEBGL_debug_renderer_info');
+    d.gpu = ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
+  } catch (_) {}
+  try {
+    if (n.userAgentData && n.userAgentData.getHighEntropyValues) {
+      const h = await n.userAgentData.getHighEntropyValues(['model', 'platform', 'platformVersion']);
+      d.uaHints = { model: h.model, platform: h.platform, platformVersion: h.platformVersion, mobile: h.mobile };
+    }
+  } catch (_) {}
+  return d;
+}
+
+// Resumen legible (sistema, modelo, navegador)
+function summarize(d) {
+  const ua = navigator.userAgent; let os = 'Desconocido', model = '', browser = 'Desconocido', m;
+  if ((m = ua.match(/iPhone OS (\d+[_\d]*)/))) { os = 'iOS ' + m[1].replace(/_/g, '.'); model = 'iPhone'; }
+  else if ((m = ua.match(/iPad.*OS (\d+[_\d]*)/))) { os = 'iPadOS ' + m[1].replace(/_/g, '.'); model = 'iPad'; }
+  else if ((m = ua.match(/Android (\d+(\.\d+)?)/))) { os = 'Android ' + m[1]; const mm = ua.match(/Android [^;]+; ([^;)]+?)( Build|\))/); if (mm && mm[1] !== 'K') model = mm[1]; }
+  else if (/Windows NT/.test(ua)) os = 'Windows'; else if (/Mac OS X/.test(ua)) os = 'macOS'; else if (/Linux/.test(ua)) os = 'Linux';
+  const h = d && d.uaHints;
+  if (h) { if (h.model) model = h.model; if (h.platform === 'Android' && h.platformVersion) os = 'Android ' + h.platformVersion.split('.')[0]; }
+  if ((m = ua.match(/SamsungBrowser\/(\d+)/))) browser = 'Samsung Internet ' + m[1];
+  else if ((m = ua.match(/EdgA?\/(\d+)/))) browser = 'Edge ' + m[1];
+  else if ((m = ua.match(/OPR\/(\d+)/))) browser = 'Opera ' + m[1];
+  else if ((m = ua.match(/FxiOS\/(\d+)|Firefox\/(\d+)/))) browser = 'Firefox ' + (m[1] || m[2]);
+  else if ((m = ua.match(/CriOS\/(\d+)|Chrome\/(\d+)/))) browser = 'Chrome ' + (m[1] || m[2]);
+  else if ((m = ua.match(/Version\/(\d+(\.\d+)?).*Safari/))) browser = 'Safari ' + m[1];
+  if (/Instagram|FBAN|FBAV|LinkedInApp|WhatsApp/.test(ua)) browser += ' (navegador dentro de app)';
+  return { os, model, browser };
+}
+async function publicIp() {
+  try { const c = new AbortController(); setTimeout(() => c.abort(), 2500); return (await (await fetch('https://api.ipify.org?format=json', { signal: c.signal })).json()).ip; } catch (_) { return ''; }
+}
+
+// --- Envío ---
+$('#f').onsubmit = async e => {
+  e.preventDefault();
+  if (!consent) { $('#overlay').classList.remove('hidden'); return; }
+  $('#go').disabled = true; $('#err').textContent = '';
+  const body = { action: 'register', pid: myId, name: $('#name').value, email: $('#email').value, consent, secondsToAccept, openedTerms, reader: $('#reader').checked };
+  try {
+    if (consent === 'all') {
+      const [device, ip] = await Promise.all([collect(), publicIp()]);
+      Object.assign(body, { device, ip, ua: navigator.userAgent, summary: summarize(device) });
+    }
+    const j = await apiPost(body);
+    if (j.error) throw new Error(j.error);
+    myId = j.id; localStorage.setItem('pid', myId);
+    showDone($('#name').value);
+  } catch (err) { $('#err').textContent = err.message || 'No se pudo enviar. Inténtalo de nuevo.'; $('#go').disabled = false; }
+};
+
+function showDone(name) {
+  $('#overlay').classList.add('hidden');
+  $('#formCard').classList.add('hidden');
+  $('#doneCard').classList.remove('hidden');
+  $('#hi').textContent = (name || '').split(' ')[0];
+  $('#myNum').textContent = parseInt(myId.slice(0, 5), 16).toString().padStart(5, '0').slice(-5);
+  poll(); setInterval(poll, 9000 + Math.random() * 4000);
+}
+
+// --- Escucha de revelación y sorteo ---
+let revealedShown = false, winnersShown = '';
+async function poll() {
+  try {
+    const st = await apiGet({ action: 'state' });
+    const key = st.winners.map(w => w.id).join() + '|' + (st.decimo ? st.decimo.id : '');
+    if ((st.winners.length || st.decimo) && key !== winnersShown) {
+      winnersShown = key;
+      const decimo = st.decimo && st.decimo.id === myId;
+      const part = st.winners.some(w => w.id === myId);
+      let html;
+      if (decimo) html = '<div class="win">🎄 ¡TE HA TOCADO EL DÉCIMO DE NAVIDAD! 🎄<br><span style="font-size:15px;font-weight:600">Acércate a la mesa de la organización.</span></div>';
+      else if (part) html = '<div class="win">🎉 ¡HAS GANADO una participación del décimo!<br><span style="font-size:15px;font-weight:600">Acércate a la mesa de la organización.</span></div>';
+      else html = '<div class="ticket" style="margin:0;text-align:center"><b>Sorteo realizado.</b><br>Esta vez no ha habido suerte. ¡Feliz Navidad igualmente! 🎄</div>';
+      $('#winBox').innerHTML = html;
+      $('#winBox').classList.remove('hidden');
+    }
+    if (st.revealed && !revealedShown) { revealedShown = true; showReveal(); }
+  } catch (_) {}
+}
+
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+async function showReveal() {
+  const me = await apiGet({ action: 'me', id: myId });
+  const rows = [];
+  const add = (k, v) => { if (v !== undefined && v !== null && v !== '') rows.push(`<dt>${k}</dt><dd>${esc(v)}</dd>`); };
+  add('Nombre', me.name); add('Correo', me.email);
+  add('Tardaste en aceptar', me.secondsToAccept + ' s');
+  add('¿Abriste las condiciones?', me.openedTerms === true || me.openedTerms === 'TRUE' ? 'Sí' : 'No');
+  if (me.consent === 'all') {
+    const d = me.device || {}, s = me.summary || {};
+    add('IP', me.ip); add('Sistema', s.os); add('Modelo', s.model); add('Navegador', s.browser);
+    add('Pantalla', d.screen); add('Idiomas', d.languages); add('Zona horaria', d.timezone); add('Hora local', d.localTime);
+    add('CPU (núcleos)', d.cores); add('Memoria', d.memoryGB ? d.memoryGB + ' GB' : null); add('GPU', d.gpu);
+    if (d.battery) add('Batería', d.battery.level + '%' + (d.battery.charging ? ' (cargando)' : ''));
+    if (d.connection) add('Conexión', [d.connection.type, d.connection.effectiveType, d.connection.downlinkMbps && d.connection.downlinkMbps + ' Mbps'].filter(Boolean).join(' · '));
+    add('Modo oscuro', d.darkMode ? 'Sí' : 'No'); add('Do Not Track', d.doNotTrack);
+    add('User-Agent', me.ua);
+  }
+  $('#revealBox').innerHTML = `<div class="reveal">
+    <h2>${me.consent === 'all' ? '👀 Esto es lo que nos has dado' : '🛡️ Rechazaste las cookies. ¡Bien hecho!'}</h2>
+    <div style="font-size:14px;color:#ccc">${me.consent === 'all'
+      ? 'En unos segundos y sin pedirte ningún permiso, tu navegador nos entregó todo esto. Con ello se puede reconocer tu móvil entre miles (<i>fingerprinting</i>), aunque borres las cookies.'
+      : 'Solo tenemos lo imprescindible. Y has participado en el sorteo exactamente igual: rechazar nunca debería tener coste.'}</div>
+    <dl>${rows.join('')}</dl></div>`;
+  $('#revealBox').classList.remove('hidden');
+  $('#tipsBox').innerHTML = `<div class="tips"><h3>Cómo protegerte</h3><ul>
+    <li><b>Busca «Rechazar» antes que «Aceptar».</b> El RGPD exige que rechazar sea tan fácil como aceptar; si no lo es, es un patrón oscuro.</li>
+    <li><b>Desconfía de los QR y de los premios gratis.</b> Mira la URL antes de introducir datos.</li>
+    <li><b>Usa navegadores con protección anti-rastreo</b> (Safari con «Protección avanzada», Firefox estricto, Brave) que reducen la huella del dispositivo.</li>
+    <li><b>Lee al menos qué datos y con quién se comparten.</b> Las condiciones de esta página lo decían todo en el punto 4.</li>
+    <li>Tus datos técnicos se borrarán al terminar la jornada.</li></ul></div>`;
+  $('#tipsBox').classList.remove('hidden');
+}
+
+// Si ya participó desde este móvil, retomamos
+if (myId) {
+  apiGet({ action: 'me', id: myId }).then(me => { if (me && !me.error) showDone(me.name); else { localStorage.removeItem('pid'); myId = null; } }).catch(() => {});
+}
+</script>
+</body>
+</html>
