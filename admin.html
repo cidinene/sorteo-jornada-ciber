@@ -20,6 +20,7 @@
   .controls button.gold { background:var(--gold); border-color:var(--gold); color:#2a1d00; font-weight:700; }
   .controls button.danger { color:var(--red); }
   body.clean .controls { visibility:hidden; }
+  .adm { display:none; } body.showadm .adm { display:inline-block; }
   .view { flex:1; display:none; padding:28px; gap:28px; min-height:0; }
   .view.on { display:flex; }
 
@@ -77,11 +78,10 @@
 <div class="top">
   <h1>Jornada de Ciberseguridad <span>· Sorteo del décimo de Navidad</span></h1>
   <div class="controls">
-    <button data-v="reg">1 · Registro</button>
-    <button class="primary" id="btnReveal">2 · Revelar 👀</button>
-    <button class="gold" id="btnDraw">3 · Sortear 🎄</button>
-    <button class="danger" id="btnWipe" title="Borra IP, UA y huella; conserva nombre y correo">Borrar datos técnicos</button>
-    <button class="danger" id="btnReset">Reiniciar</button>
+    <button data-v="reg" class="adm">Registro</button>
+    <button class="gold" id="btnDraw">Sortear 🎄</button>
+    <button class="danger adm" id="btnWipe" title="Borra IP, UA y huella; conserva nombre y correo">Borrar datos técnicos</button>
+    <button class="danger adm" id="btnReset">Reiniciar</button>
   </div>
 </div>
 
@@ -117,7 +117,7 @@
   <div id="decimoBox"></div>
 </div>
 
-<div class="hint">Atajos: <b>1</b> registro · <b>2</b> revelar · <b>3</b> sorteo · <b>H</b> ocultar botones · <b>F</b> pantalla completa</div>
+
 
 <div id="login" style="display:none"><div>Clave de administración</div><input id="k" type="password" autofocus><div style="color:#8b93a3;font-size:14px">La que pusiste en ADMIN_KEY dentro del Apps Script</div></div>
 
@@ -201,7 +201,7 @@ $('#k').onkeydown = e => { if (e.key === 'Enter') { KEY = e.target.value.trim();
 if (KEY) sessionStorage.setItem('k', KEY);
 load(); setInterval(load, 4000);
 
-$('#btnReveal').onclick = async () => { await admin('admin_reveal'); await load(); show('reveal'); };
+const reveal = async () => { await admin('admin_reveal'); await load(); show('reveal'); };
 $('#btnWipe').onclick = async () => { if (confirm('¿Borrar IP, User-Agent y huella de todos? Se conservan nombre, correo y ganadores.')) { await admin('admin_wipe'); load(); } };
 $('#btnReset').onclick = async () => { if (confirm('¿Borrar TODOS los participantes y el sorteo? No se puede deshacer.')) { await admin('admin_reset'); seen.clear(); $('#names').innerHTML = ''; $('#winners').innerHTML = ''; $('#decimoBox').innerHTML = ''; load(); } };
 
@@ -228,8 +228,9 @@ $('#btnDraw').onclick = async () => {
 
 document.addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT') return;
-  if (e.key === '1') show('reg'); if (e.key === '2') $('#btnReveal').click(); if (e.key === '3') $('#btnDraw').click();
+  if (e.key === '1') show('reg'); if (e.key === '2') reveal(); if (e.key === '3') $('#btnDraw').click();
   if (e.key.toLowerCase() === 'h') document.body.classList.toggle('clean');
+  if (e.key.toLowerCase() === 'a') document.body.classList.toggle('showadm');
   if (e.key.toLowerCase() === 'f') (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen());
 });
 </script>
